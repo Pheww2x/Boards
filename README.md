@@ -31,12 +31,6 @@ JWT_SECRET=change-this-secret
 FRONTEND_URL=http://localhost:5173
 SOCKET_ORIGIN=*
 
-## Demo credentials
-
-- admin@boardhouse.local / admin123
-- owner@boardhouse.local / owner123
-- staff@boardhouse.local / staff123
-- tenant@boardhouse.local / tenant123
 
 ## Features implemented
 
