@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env';
+import UserModel from '../models/User';
 
 export type Role = 'super_admin' | 'owner' | 'staff' | 'tenant';
 
@@ -179,13 +180,18 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ message: 'Missing or invalid token' });
   }
 
+  let payload: AuthUser;
   try {
-    const { getUserById } = require('../services/store');
     const token = authHeader.replace('Bearer ', '');
-    const payload = verifyToken(token) as AuthUser;
-    const user = getUserById(payload.id);
+    payload = verifyToken(token) as AuthUser;
+  } catch {
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
+
+  UserModel.findOne({ id: payload.id }).exec().then((user) => {
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      res.status(401).json({ message: 'User not found' });
+      return;
     }
     req.user = {
       ...payload,
@@ -195,9 +201,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
       boardingHouseId: user.boardingHouseId,
     };
     next();
-  } catch (error) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
-  }
+  }).catch(next);
 }
 
 export function requireRole(...roles: Role[]) {

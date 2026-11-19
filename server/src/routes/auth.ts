@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { comparePassword, generateToken, requireAuth } from '../middleware/auth';
 import { getUserByEmail } from '../services/store';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
-router.post('/login', (req, res) => {
+router.post('/login', asyncHandler(async (req, res) => {
   const { email, password } = req.body ?? {};
-  const user = getUserByEmail(email);
+  const user = typeof email === 'string' ? await getUserByEmail(email) : null;
 
   if (!user || !comparePassword(password, user.passwordHash)) {
     return res.status(401).json({ message: 'Invalid email or password' });
@@ -28,7 +29,7 @@ router.post('/login', (req, res) => {
       role: user.role,
     },
   });
-});
+}));
 
 router.get('/me', requireAuth, (req, res) => {
   return res.json({ user: req.user });

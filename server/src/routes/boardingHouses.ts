@@ -1,17 +1,20 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth';
-import { getBoardingHouseById, state } from '../services/store';
+import BoardingHouse from '../models/BoardingHouse';
+import { getBoardingHouseById } from '../services/store';
+import { asyncHandler } from '../utils/asyncHandler';
+import { createId } from '../utils/id';
 
 const router = Router();
 
-router.get('/', requireAuth, requireRole('super_admin', 'owner'), (req, res) => {
-  return res.json({ boardingHouses: state.boardingHouses });
-});
+router.get('/', requireAuth, requireRole('super_admin', 'owner'), asyncHandler(async (_req, res) => {
+  return res.json({ boardingHouses: await BoardingHouse.find().exec() });
+}));
 
-router.post('/', requireAuth, requireRole('super_admin', 'owner'), (req, res) => {
+router.post('/', requireAuth, requireRole('super_admin', 'owner'), asyncHandler(async (req, res) => {
   const payload = req.body ?? {};
   const boardingHouse = {
-    id: `boarding-house-${Date.now()}`,
+    id: createId('boarding-house'),
     name: payload.name ?? 'New Boarding House',
     owner: payload.owner ?? 'owner',
     contact: payload.contact ?? 'N/A',
@@ -23,15 +26,15 @@ router.post('/', requireAuth, requireRole('super_admin', 'owner'), (req, res) =>
     createdAt: new Date().toISOString(),
   };
 
-  state.boardingHouses.push(boardingHouse);
-  return res.status(201).json(boardingHouse);
-});
+  const created = await BoardingHouse.create(boardingHouse);
+  return res.status(201).json(created);
+}));
 
-router.get('/:id', requireAuth, (req, res) => {
+router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const boardingHouse = getBoardingHouseById(id);
+  const boardingHouse = await getBoardingHouseById(id);
   if (!boardingHouse) return res.status(404).json({ message: 'Boarding house not found' });
   return res.json(boardingHouse);
-});
+}));
 
 export default router;

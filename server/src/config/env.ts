@@ -9,4 +9,7 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET ?? 'dev-secret-key',
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:5173',
   socketOrigin: process.env.SOCKET_ORIGIN ?? '*',
+  seedDemoData: process.env.SEED_DEMO_DATA === undefined
+    ? process.env.NODE_ENV !== 'production'
+    : process.env.SEED_DEMO_DATA === 'true',
 };

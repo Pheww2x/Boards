@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import type { NextFunction, Request, Response } from 'express';
 import { env } from './config/env';
-import { connectDatabase } from './config/db';
+import { connectDatabase, isMongoConnected } from './config/db';
 import { createHttpServer, handleJsonRpc } from './rpc';
 import { initializeSocketServer } from './sockets';
 import authRouter from './routes/auth';
@@ -21,8 +22,6 @@ import { seedDemoData } from './services/store';
 const app = express();
 const server = createHttpServer(app);
 const io = initializeSocketServer(server);
-
-seedDemoData();
 
 app.use(helmet());
 app.use(
@@ -44,8 +43,8 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
-    mode: 'development',
-    mongodb: 'in-memory fallback',
+    mode: process.env.NODE_ENV ?? 'development',
+    mongodb: isMongoConnected ? 'connected' : 'disconnected',
     socket: 'ready',
     timestamp: new Date().toISOString(),
   });
@@ -67,8 +66,15 @@ app.get('/', (req, res) => {
   res.json({ message: 'Boards API is running' });
 });
 
+app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
+  if (res.headersSent) return next(error);
+  console.error('Request failed:', error);
+  return res.status(500).json({ message: 'Internal server error' });
+});
+
 const main = async () => {
   await connectDatabase();
+  if (env.seedDemoData) await seedDemoData();
   server.listen(env.port, env.host, () => {
     console.log(`Server listening on http://${env.host}:${env.port}`);
   });

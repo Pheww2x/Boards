@@ -4,10 +4,15 @@ import { env } from './env';
 
 export let isMongoConnected = false;
 
-export async function connectDatabase() {
-  const isProduction = process.env.NODE_ENV === 'production';
+mongoose.connection.on('connected', () => {
+  isMongoConnected = true;
+});
+mongoose.connection.on('disconnected', () => {
+  isMongoConnected = false;
+});
 
-  if (isProduction && !process.env.MONGODB_URI) {
+export async function connectDatabase() {
+  if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
     throw new Error('MONGODB_URI is missing in production environment.');
   }
 
@@ -22,17 +27,7 @@ export async function connectDatabase() {
     return true;
   } catch (error) {
     isMongoConnected = false;
-
-    if (isProduction) {
-      console.error('MongoDB connection failed:', error);
-      throw error;
-    }
-
-    console.warn(
-      'MongoDB unavailable. Running in in-memory development mode.',
-      error
-    );
-
-    return false;
+    console.error('MongoDB connection failed:', error);
+    throw error;
   }
 }

@@ -1,23 +1,24 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { state } from '../services/store';
+import Announcement from '../models/Announcement';
+import { asyncHandler } from '../utils/asyncHandler';
+import { createId } from '../utils/id';
 
 const router = Router();
 
-router.get('/', requireAuth, (req, res) => {
-  const items = state.announcements.slice(-10);
-  return res.json({ announcements: items });
-});
+router.get('/', requireAuth, asyncHandler(async (_req, res) => {
+  const announcements = await Announcement.find().sort({ createdAt: 1, _id: 1 }).exec();
+  return res.json({ announcements: announcements.slice(-10) });
+}));
 
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, asyncHandler(async (req, res) => {
   const payload = req.body ?? {};
-  const announcement = {
-    id: `announcement-${Date.now()}`,
+  const announcement = await Announcement.create({
+    id: createId('announcement'),
     message: payload.message ?? 'New announcement',
     createdAt: new Date().toISOString(),
-  };
-  state.announcements.push(announcement);
+  });
   return res.status(201).json(announcement);
-});
+}));
 
 export default router;

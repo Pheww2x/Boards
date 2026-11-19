@@ -1,16 +1,32 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { state } from '../services/store';
+import Announcement from '../models/Announcement';
+import BoardingHouse from '../models/BoardingHouse';
+import MaintenanceRequest from '../models/MaintenanceRequest';
+import Notification from '../models/Notification';
+import Payment from '../models/Payment';
+import Room from '../models/Room';
+import Tenant from '../models/Tenant';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
-router.get('/', requireAuth, (req, res) => {
+router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const user = req.user!;
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const [allRooms, allTenants, allPayments, allMaintenanceRequests, allBoardingHouses, announcements] = await Promise.all([
+    Room.find().exec(),
+    Tenant.find().exec(),
+    Payment.find().exec(),
+    MaintenanceRequest.find().exec(),
+    BoardingHouse.find().exec(),
+    Announcement.find().sort({ createdAt: 1, _id: 1 }).exec(),
+  ]);
+  const recentAnnouncements = announcements.slice(-10);
 
   if (user.role === 'tenant') {
-    const tenant = state.tenants.find((item) => item.userId === user.id);
+    const tenant = allTenants.find((item) => item.userId === user.id);
     if (!tenant) {
       return res.json({
         summary: {
@@ -29,13 +45,13 @@ router.get('/', requireAuth, (req, res) => {
         tenants: [],
         payments: [],
         maintenanceRequests: [],
-        notifications: state.notifications.filter((item) => item.userId === user.id),
-        announcements: state.announcements.slice(-10),
+        notifications: await Notification.find({ userId: user.id }).exec(),
+        announcements: recentAnnouncements,
       });
     }
 
-    const room = state.rooms.find((item) => item.id === tenant.roomId);
-    const payments = state.payments.filter((item) => item.tenantId === tenant.id);
+    const room = allRooms.find((item) => item.id === tenant.roomId);
+    const payments = allPayments.filter((item) => item.tenantId === tenant.id);
     const currentMonthPaid = payments
       .filter((item) => item.status === 'confirmed' && new Date(item.createdAt) >= monthStart)
       .reduce((sum, item) => sum + item.amount, 0);
@@ -53,29 +69,29 @@ router.get('/', requireAuth, (req, res) => {
         monthlyIncome: currentMonthPaid,
       },
       tenant,
-      boardingHouse: state.boardingHouses.find((item) => item.id === tenant.boardingHouseId) ?? null,
+      boardingHouse: allBoardingHouses.find((item) => item.id === tenant.boardingHouseId) ?? null,
       monthlyBalance,
       currentMonthPaid,
       rooms: room ? [room] : [],
       tenants: [tenant],
       payments,
-      maintenanceRequests: state.maintenanceRequests.filter((item) => item.tenantId === tenant.id),
-      notifications: state.notifications.filter((item) => item.userId === user.id || item.userId === 'all'),
-      announcements: state.announcements.slice(-10),
+      maintenanceRequests: allMaintenanceRequests.filter((item) => item.tenantId === tenant.id),
+      notifications: await Notification.find({ userId: { $in: [user.id, 'all'] } }).exec(),
+      announcements: recentAnnouncements,
     });
   }
 
-  const boardingHouses = state.boardingHouses.filter((house) => {
+  const boardingHouses = allBoardingHouses.filter((house) => {
     if (user.role === 'super_admin') return true;
     return house.owner === user.id || house.id === user.boardingHouseId;
   });
   const boardingHouseIds = new Set(boardingHouses.map((house) => house.id));
-  const rooms = state.rooms.filter((room) => boardingHouseIds.has(room.boardingHouseId));
-  const tenants = state.tenants.filter((tenant) => boardingHouseIds.has(tenant.boardingHouseId));
+  const rooms = allRooms.filter((room) => boardingHouseIds.has(room.boardingHouseId));
+  const tenants = allTenants.filter((tenant) => boardingHouseIds.has(tenant.boardingHouseId));
   const tenantIds = new Set(tenants.map((tenant) => tenant.id));
-  const payments = state.payments.filter((payment) => tenantIds.has(payment.tenantId));
-  const maintenanceRequests = state.maintenanceRequests.filter((item) => boardingHouseIds.has(item.boardingHouseId));
-  const notifications = state.notifications.filter((item) => item.userId === user.id || item.userId === 'all');
+  const payments = allPayments.filter((payment) => tenantIds.has(payment.tenantId));
+  const maintenanceRequests = allMaintenanceRequests.filter((item) => boardingHouseIds.has(item.boardingHouseId));
+  const notifications = await Notification.find({ userId: { $in: [user.id, 'all'] } }).exec();
 
   return res.json({
     summary: {
@@ -95,9 +111,9 @@ router.get('/', requireAuth, (req, res) => {
     payments,
     maintenanceRequests,
     notifications,
-    announcements: state.announcements.slice(-10),
+    announcements: recentAnnouncements,
     boardingHouses,
   });
-});
+}));
 
 export default router;

@@ -2,7 +2,8 @@ import { Server } from 'socket.io';
 import type { Server as HttpServer } from 'http';
 import { env } from '../config/env';
 import { verifyToken } from '../middleware/auth';
-import { getUserById, state } from '../services/store';
+import User from '../models/User';
+import Tenant from '../models/Tenant';
 
 let socketServer: Server | undefined;
 
@@ -19,9 +20,14 @@ export function initializeSocketServer(httpServer: HttpServer) {
     const token = typeof rawToken === 'string' ? rawToken.replace(/^Bearer\s+/i, '') : '';
     if (!token) return next(new Error('Unauthorized socket connection'));
 
+    let payload: ReturnType<typeof verifyToken>;
     try {
-      const payload = verifyToken(token);
-      const user = getUserById(payload.id);
+      payload = verifyToken(token);
+    } catch {
+      return next(new Error('Unauthorized socket connection'));
+    }
+
+    User.findOne({ id: payload.id }).exec().then((user) => {
       if (!user) return next(new Error('Unauthorized socket connection'));
 
       socket.data.user = {
@@ -30,20 +36,17 @@ export function initializeSocketServer(httpServer: HttpServer) {
         boardingHouseId: user.boardingHouseId,
       };
       return next();
-    } catch {
-      return next(new Error('Unauthorized socket connection'));
-    }
+    }).catch((error) => {
+      console.error('Socket authentication lookup failed:', error);
+      next(new Error('Socket authentication failed'));
+    });
   });
 
   socketServer.on('connection', (socket) => {
     const connectedUser = socket.data.user as { id: string; boardingHouseId?: string };
     socket.join(`user:${connectedUser.id}`);
 
-    const tenant = state.tenants.find((item) => item.userId === connectedUser.id);
-    const boardingHouseId = connectedUser.boardingHouseId ?? tenant?.boardingHouseId;
-    if (boardingHouseId) socket.join(`house:${boardingHouseId}`);
-
-    socket.emit('client:connected', { connected: true, timestamp: new Date().toISOString() });
+    let boardingHouseId = connectedUser.boardingHouseId;
     socket.on('disconnect', () => {
       if (boardingHouseId) {
         socketServer?.to(`house:${boardingHouseId}`).emit('client:disconnected', {
@@ -52,6 +55,23 @@ export function initializeSocketServer(httpServer: HttpServer) {
         });
       }
     });
+
+    const joinHouseAndNotify = () => {
+      if (boardingHouseId) socket.join(`house:${boardingHouseId}`);
+      socket.emit('client:connected', { connected: true, timestamp: new Date().toISOString() });
+    };
+
+    if (boardingHouseId) {
+      joinHouseAndNotify();
+    } else {
+      Tenant.findOne({ userId: connectedUser.id }).exec().then((tenant) => {
+        boardingHouseId = tenant?.boardingHouseId;
+        joinHouseAndNotify();
+      }).catch((error) => {
+        console.error('Socket tenant lookup failed:', error);
+        socket.disconnect(true);
+      });
+    }
   });
 
   return socketServer;

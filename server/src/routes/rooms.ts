@@ -1,34 +1,48 @@
 import { Router } from 'express';
-import { requireAuth, requireRole, type Room } from '../middleware/auth';
-import { addAuditLog, addEventLog, assignTenantToRoom, state } from '../services/store';
+import { requireAuth, requireRole, type Room as RoomData } from '../middleware/auth';
+import { addAuditLog, addEventLog, assignTenantToRoom } from '../services/store';
+import BoardingHouse from '../models/BoardingHouse';
+import Room from '../models/Room';
+import Tenant from '../models/Tenant';
 import { emitRealtimeEvent } from '../utils/network';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
-function canAccessBoardingHouse(user: NonNullable<Express.Request['user']>, boardingHouseId: string) {
+async function canAccessBoardingHouse(user: NonNullable<Express.Request['user']>, boardingHouseId: string) {
   if (user.role === 'super_admin') return true;
-  return user.boardingHouseId === boardingHouseId ||
-    state.boardingHouses.some((house) => house.id === boardingHouseId && house.owner === user.id);
+  if (user.boardingHouseId === boardingHouseId) return true;
+  return Boolean(await BoardingHouse.exists({ id: boardingHouseId, owner: user.id }));
 }
 
-router.get('/', requireAuth, requireRole('super_admin', 'owner', 'staff', 'tenant'), (req, res) => {
+router.get('/', requireAuth, requireRole('super_admin', 'owner', 'staff', 'tenant'), asyncHandler(async (req, res) => {
   if (req.user?.role === 'tenant') {
-    const tenant = state.tenants.find((item) => item.userId === req.user?.id);
-    const room = tenant?.roomId ? state.rooms.find((item) => item.id === tenant.roomId) : undefined;
-    return res.json({ rooms: room ? [room] : [], boardingHouses: tenant ? state.boardingHouses.filter((house) => house.id === tenant.boardingHouseId) : [] });
+    const tenant = await Tenant.findOne({ userId: req.user.id }).exec();
+    const room = tenant?.roomId ? await Room.findOne({ id: tenant.roomId }).exec() : null;
+    const boardingHouses = tenant
+      ? await BoardingHouse.find({ id: tenant.boardingHouseId }).exec()
+      : [];
+    return res.json({ rooms: room ? [room] : [], boardingHouses });
   }
 
-  const rooms = state.rooms.filter((room) => canAccessBoardingHouse(req.user!, room.boardingHouseId));
-  const boardingHouses = state.boardingHouses.filter((house) => canAccessBoardingHouse(req.user!, house.id));
-  return res.json({ rooms, boardingHouses });
-});
+  const [rooms, boardingHouses] = await Promise.all([Room.find().exec(), BoardingHouse.find().exec()]);
+  const visibleRooms = [];
+  for (const room of rooms) {
+    if (await canAccessBoardingHouse(req.user!, room.boardingHouseId)) visibleRooms.push(room);
+  }
+  const visibleHouses = [];
+  for (const house of boardingHouses) {
+    if (await canAccessBoardingHouse(req.user!, house.id)) visibleHouses.push(house);
+  }
+  return res.json({ rooms: visibleRooms, boardingHouses: visibleHouses });
+}));
 
-router.post('/', requireAuth, requireRole('super_admin', 'owner'), (req, res) => {
+router.post('/', requireAuth, requireRole('super_admin', 'owner'), asyncHandler(async (req, res) => {
   const payload = req.body ?? {};
   const boardingHouseId = req.user?.role === 'super_admin'
-    ? payload.boardingHouseId ?? state.boardingHouses[0]?.id
+    ? payload.boardingHouseId ?? (await BoardingHouse.findOne().exec())?.id
     : req.user?.boardingHouseId;
-  const boardingHouse = state.boardingHouses.find((house) => house.id === boardingHouseId);
+  const boardingHouse = boardingHouseId ? await BoardingHouse.findOne({ id: boardingHouseId }).exec() : null;
   const roomNumber = typeof payload.roomNumber === 'string' ? payload.roomNumber.trim() : '';
   const maxCapacity = Number(payload.maxCapacity);
   const monthlyRent = Number(payload.monthlyRent);
@@ -38,11 +52,11 @@ router.post('/', requireAuth, requireRole('super_admin', 'owner'), (req, res) =>
   if (!roomNumber || !Number.isInteger(maxCapacity) || maxCapacity < 1 || !Number.isInteger(floor) || floor < 1 || !Number.isFinite(monthlyRent) || monthlyRent < 0) {
     return res.status(400).json({ message: 'Room number, floor, capacity, and rent must be valid' });
   }
-  if (state.rooms.some((room) => room.boardingHouseId === boardingHouse.id && room.roomNumber === roomNumber)) {
+  if (await Room.exists({ boardingHouseId: boardingHouse.id, roomNumber })) {
     return res.status(409).json({ message: 'That room number already exists in this boarding house' });
   }
 
-  const room: Room = {
+  const roomData: RoomData = {
     id: `room-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     boardingHouseId: boardingHouse.id,
     roomNumber,
@@ -57,20 +71,29 @@ router.post('/', requireAuth, requireRole('super_admin', 'owner'), (req, res) =>
     createdAt: new Date().toISOString(),
   };
 
-  state.rooms.push(room);
-  boardingHouse.totalRooms = state.rooms.filter((item) => item.boardingHouseId === boardingHouse.id).length;
-  addEventLog('room:created', room.id, room.boardingHouseId);
-  addAuditLog('create-room', req.user?.id ?? 'system', `Created room ${room.roomNumber}`);
+  let room;
+  try {
+    room = await Room.create(roomData);
+  } catch (error) {
+    if ((error as { code?: number }).code === 11000) {
+      return res.status(409).json({ message: 'That room number already exists in this boarding house' });
+    }
+    throw error;
+  }
+  boardingHouse.totalRooms = await Room.countDocuments({ boardingHouseId: boardingHouse.id }).exec();
+  await boardingHouse.save();
+  await addEventLog('room:created', room.id, room.boardingHouseId);
+  await addAuditLog('create-room', req.user?.id ?? 'system', `Created room ${room.roomNumber}`);
   emitRealtimeEvent('room:created', room, { boardingHouseId: room.boardingHouseId });
   emitRealtimeEvent('room:availabilityUpdated', room, { boardingHouseId: room.boardingHouseId });
   return res.status(201).json(room);
-});
+}));
 
-router.patch('/:id', requireAuth, requireRole('super_admin', 'owner', 'staff'), (req, res) => {
+router.patch('/:id', requireAuth, requireRole('super_admin', 'owner', 'staff'), asyncHandler(async (req, res) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const room = state.rooms.find((item) => item.id === id);
+  const room = await Room.findOne({ id }).exec();
   if (!room) return res.status(404).json({ message: 'Room not found' });
-  if (!canAccessBoardingHouse(req.user!, room.boardingHouseId)) return res.status(403).json({ message: 'Forbidden' });
+  if (!await canAccessBoardingHouse(req.user!, room.boardingHouseId)) return res.status(403).json({ message: 'Forbidden' });
 
   const updates = req.body ?? {};
   if (updates.maxCapacity !== undefined) {
@@ -89,37 +112,41 @@ router.patch('/:id', requireAuth, requireRole('super_admin', 'owner', 'staff'), 
   if (typeof updates.description === 'string') room.description = updates.description;
   if (Array.isArray(updates.facilities)) room.facilities = updates.facilities;
 
-  addEventLog('room:availabilityUpdated', room.id, room.boardingHouseId);
+  await room.save();
+  await addEventLog('room:availabilityUpdated', room.id, room.boardingHouseId);
   emitRealtimeEvent('room:availabilityUpdated', room, { boardingHouseId: room.boardingHouseId });
   return res.json(room);
-});
+}));
 
-router.post('/:id/assign', requireAuth, requireRole('super_admin', 'owner', 'staff'), (req, res) => {
+router.post('/:id/assign', requireAuth, requireRole('super_admin', 'owner', 'staff'), asyncHandler(async (req, res) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const room = state.rooms.find((item) => item.id === id);
-  const tenant = state.tenants.find((item) => item.id === req.body?.tenantId);
+  if (typeof req.body?.tenantId !== 'string') return res.status(404).json({ message: 'Room or tenant not found' });
+  const [room, tenant] = await Promise.all([
+    Room.findOne({ id }).exec(),
+    Tenant.findOne({ id: req.body?.tenantId }).exec(),
+  ]);
   if (!room || !tenant) return res.status(404).json({ message: 'Room or tenant not found' });
-  if (!canAccessBoardingHouse(req.user!, room.boardingHouseId) || tenant.boardingHouseId !== room.boardingHouseId) {
+  if (!await canAccessBoardingHouse(req.user!, room.boardingHouseId) || tenant.boardingHouseId !== room.boardingHouseId) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
   try {
-    const result = assignTenantToRoom(tenant.id, room.id, room.boardingHouseId);
-    addEventLog('tenant:assigned', tenant.id, room.boardingHouseId);
+    const result = await assignTenantToRoom(tenant.id, room.id, room.boardingHouseId);
+    await addEventLog('tenant:assigned', tenant.id, room.boardingHouseId);
     emitRealtimeEvent('tenant:assigned', result, { boardingHouseId: room.boardingHouseId });
     emitRealtimeEvent('room:availabilityUpdated', result.room, { boardingHouseId: room.boardingHouseId });
     return res.json(result);
   } catch (error) {
     return res.status(400).json({ message: (error as Error).message });
   }
-});
+}));
 
-router.get('/:id/availability', requireAuth, (req, res) => {
+router.get('/:id/availability', requireAuth, asyncHandler(async (req, res) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const room = state.rooms.find((item) => item.id === id);
+  const room = await Room.findOne({ id }).exec();
   if (!room) return res.status(404).json({ message: 'Room not found' });
-  if (!canAccessBoardingHouse(req.user!, room.boardingHouseId)) return res.status(403).json({ message: 'Forbidden' });
+  if (!await canAccessBoardingHouse(req.user!, room.boardingHouseId)) return res.status(403).json({ message: 'Forbidden' });
   return res.json({ roomId: room.id, availability: room.maxCapacity - room.occupancy, occupancy: room.occupancy });
-});
+}));
 
 export default router;
