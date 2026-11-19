@@ -421,7 +421,7 @@ export default function App() {
   return (
     <div className="boards-app min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-7xl p-4 md:p-8">
-        <header className="boards-topbar mb-8 flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 md:flex-row md:flex-wrap md:items-center md:justify-between">
+        <header className={`boards-topbar mb-8 grid grid-cols-1 gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 lg:items-center ${user.role === 'tenant' ? 'lg:grid-cols-[1fr_auto]' : 'lg:grid-cols-[auto_minmax(0,1fr)_auto]'}`}>
           <div className="flex items-center gap-3">
             <img className="boards-dashboard-logo" src="/boards-logo.png" alt="Boards" />
             <div>
@@ -429,17 +429,17 @@ export default function App() {
             </div>
           </div>
           {user.role !== 'tenant' && (
-            <nav className="flex flex-wrap items-center gap-2" aria-label="Dashboard screens">
-              <button type="button" onClick={() => setAdminScreen('dashboard')} aria-current={adminScreen === 'dashboard' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm transition-colors ${adminScreen === 'dashboard' ? 'border-cyan-600 bg-cyan-50 text-cyan-700' : 'border-slate-200 text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700'}`}>Dashboard</button>
+            <nav className="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-xl bg-slate-100 p-1 lg:justify-self-center" aria-label="Dashboard screens">
+              <button type="button" onClick={() => setAdminScreen('dashboard')} aria-current={adminScreen === 'dashboard' ? 'page' : undefined} className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${adminScreen === 'dashboard' ? 'bg-white text-cyan-700 shadow-sm' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'}`}>Dashboard</button>
               {(user.role === 'owner' || user.role === 'super_admin') && (
-                <button type="button" onClick={() => setAdminScreen('create-room')} aria-current={adminScreen === 'create-room' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm transition-colors ${adminScreen === 'create-room' ? 'border-cyan-600 bg-cyan-50 text-cyan-700' : 'border-slate-200 text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700'}`}>Create Room</button>
+                <button type="button" onClick={() => setAdminScreen('create-room')} aria-current={adminScreen === 'create-room' ? 'page' : undefined} className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${adminScreen === 'create-room' ? 'bg-white text-cyan-700 shadow-sm' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'}`}>Create Room</button>
               )}
               {(user.role === 'staff' || user.role === 'super_admin' || user.role === 'owner') && (
-                <button type="button" onClick={() => setAdminScreen('register-tenant')} aria-current={adminScreen === 'register-tenant' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm transition-colors ${adminScreen === 'register-tenant' ? 'border-cyan-600 bg-cyan-50 text-cyan-700' : 'border-slate-200 text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700'}`}>Tenant Registration</button>
+                <button type="button" onClick={() => setAdminScreen('register-tenant')} aria-current={adminScreen === 'register-tenant' ? 'page' : undefined} className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${adminScreen === 'register-tenant' ? 'bg-white text-cyan-700 shadow-sm' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'}`}>Tenant Registration</button>
               )}
             </nav>
           )}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 lg:justify-self-end">
             <div className={`rounded-full border px-3 py-1 text-xs ${connectionStatus === 'online' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : connectionStatus === 'offline' ? 'border-red-500 bg-red-500/10 text-red-300' : 'border-amber-500 bg-amber-500/10 text-amber-300'}`}>
               {connectionStatus === 'online' ? 'Online' : connectionStatus === 'offline' ? 'Reconnecting' : 'Connecting'}
             </div>
