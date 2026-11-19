@@ -421,14 +421,25 @@ export default function App() {
   return (
     <div className="boards-app min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-7xl p-4 md:p-8">
-        <header className="boards-topbar mb-8 flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 md:flex-row md:items-center md:justify-between">
+        <header className="boards-topbar mb-8 flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 md:flex-row md:flex-wrap md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <img className="boards-dashboard-logo" src="/boards-logo.png" alt="Boards" />
             <div>
               <h1 className="mt-1 text-sm font-medium text-slate-500">{roleLabel} dashboard</h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          {user.role !== 'tenant' && (
+            <nav className="flex flex-wrap items-center gap-2" aria-label="Dashboard screens">
+              <button type="button" onClick={() => setAdminScreen('dashboard')} aria-current={adminScreen === 'dashboard' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm transition-colors ${adminScreen === 'dashboard' ? 'border-cyan-600 bg-cyan-50 text-cyan-700' : 'border-slate-200 text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700'}`}>Dashboard</button>
+              {(user.role === 'owner' || user.role === 'super_admin') && (
+                <button type="button" onClick={() => setAdminScreen('create-room')} aria-current={adminScreen === 'create-room' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm transition-colors ${adminScreen === 'create-room' ? 'border-cyan-600 bg-cyan-50 text-cyan-700' : 'border-slate-200 text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700'}`}>Create Room</button>
+              )}
+              {(user.role === 'staff' || user.role === 'super_admin' || user.role === 'owner') && (
+                <button type="button" onClick={() => setAdminScreen('register-tenant')} aria-current={adminScreen === 'register-tenant' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm transition-colors ${adminScreen === 'register-tenant' ? 'border-cyan-600 bg-cyan-50 text-cyan-700' : 'border-slate-200 text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700'}`}>Tenant Registration</button>
+              )}
+            </nav>
+          )}
+          <div className="flex flex-wrap items-center gap-3">
             <div className={`rounded-full border px-3 py-1 text-xs ${connectionStatus === 'online' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : connectionStatus === 'offline' ? 'border-red-500 bg-red-500/10 text-red-300' : 'border-amber-500 bg-amber-500/10 text-amber-300'}`}>
               {connectionStatus === 'online' ? 'Online' : connectionStatus === 'offline' ? 'Reconnecting' : 'Connecting'}
             </div>
@@ -436,18 +447,6 @@ export default function App() {
             <button onClick={logout} className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800">Logout</button>
           </div>
         </header>
-
-        {user.role !== 'tenant' && (
-          <nav className="mb-6 flex flex-wrap gap-3" aria-label="Dashboard screens">
-            <button type="button" onClick={() => setAdminScreen('dashboard')} aria-current={adminScreen === 'dashboard' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm ${adminScreen === 'dashboard' ? 'border-cyan-700 text-cyan-300' : 'border-slate-700 hover:bg-slate-800'}`}>Dashboard</button>
-            {(user.role === 'owner' || user.role === 'super_admin') && (
-              <button type="button" onClick={() => setAdminScreen('create-room')} aria-current={adminScreen === 'create-room' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm ${adminScreen === 'create-room' ? 'border-cyan-700 text-cyan-300' : 'border-slate-700 hover:bg-slate-800'}`}>Create Room</button>
-            )}
-            {(user.role === 'staff' || user.role === 'super_admin' || user.role === 'owner') && (
-              <button type="button" onClick={() => setAdminScreen('register-tenant')} aria-current={adminScreen === 'register-tenant' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm ${adminScreen === 'register-tenant' ? 'border-cyan-700 text-cyan-300' : 'border-slate-700 hover:bg-slate-800'}`}>Tenant Registration</button>
-            )}
-          </nav>
-        )}
 
         {(error || dashboardError) && (
           <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-red-800 bg-red-950/60 p-3 text-sm text-red-200">
