@@ -115,7 +115,7 @@ export default function App() {
   const [password, setPassword] = useState('owner123');
   const [showPassword, setShowPassword] = useState(false);
 
-  const [roomForm, setRoomForm] = useState({ roomNumber: '102', floor: '1', type: 'single', maxCapacity: '1', monthlyRent: '5500' });
+  const [roomForm, setRoomForm] = useState({ roomNumber: '', floor: '', type: 'single', maxCapacity: '', monthlyRent: '' });
   const [tenantForm, setTenantForm] = useState({ name: '', email: '', phone: '', password: '', roomId: '' });
   const [paymentForm, setPaymentForm] = useState({ tenantId: 'tenant-1', roomId: 'room-201', amount: '2500', method: 'cash' });
   const [maintenanceForm, setMaintenanceForm] = useState({ title: 'AC issue', description: 'Cooling is not working in room 201', roomId: 'room-201' });
@@ -255,7 +255,7 @@ export default function App() {
         monthlyRent: Number(roomForm.monthlyRent),
         status: 'available',
       });
-      setRoomForm({ roomNumber: '103', floor: '1', type: 'single', maxCapacity: '1', monthlyRent: '6000' });
+      setRoomForm({ roomNumber: '', floor: '', type: 'single', maxCapacity: '', monthlyRent: '' });
       await refreshDashboard();
       setAdminScreen('dashboard');
     } catch (err: any) {
