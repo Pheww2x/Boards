@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? `${SERVER_ORIGIN}/api`;
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL ?? SERVER_ORIGIN;
 
 type Role = 'super_admin' | 'owner' | 'staff' | 'tenant';
+type AdminScreen = 'dashboard' | 'create-room' | 'register-tenant';
 
 type User = {
   id: string;
@@ -108,6 +109,7 @@ export default function App() {
   const [error, setError] = useState('');
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState('');
+  const [adminScreen, setAdminScreen] = useState<AdminScreen>('dashboard');
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'online' | 'offline'>('connecting');
   const [email, setEmail] = useState('owner@boardhouse.local');
   const [password, setPassword] = useState('owner123');
@@ -239,6 +241,7 @@ export default function App() {
     setToken(null);
     setUser(null);
     setDashboard(null);
+    setAdminScreen('dashboard');
   };
 
   const createRoom = async (event: FormEvent<HTMLFormElement>) => {
@@ -253,7 +256,8 @@ export default function App() {
         status: 'available',
       });
       setRoomForm({ roomNumber: '103', floor: '1', type: 'single', maxCapacity: '1', monthlyRent: '6000' });
-      refreshDashboard();
+      await refreshDashboard();
+      setAdminScreen('dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message ?? 'Could not create room');
     }
@@ -270,7 +274,8 @@ export default function App() {
         roomId: tenantForm.roomId,
       });
       setTenantForm({ name: '', email: '', phone: '', password: '', roomId: '' });
-      refreshDashboard();
+      await refreshDashboard();
+      setAdminScreen('dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message ?? 'Could not register tenant');
     }
@@ -432,6 +437,18 @@ export default function App() {
           </div>
         </header>
 
+        {user.role !== 'tenant' && (
+          <nav className="mb-6 flex flex-wrap gap-3" aria-label="Dashboard screens">
+            <button type="button" onClick={() => setAdminScreen('dashboard')} aria-current={adminScreen === 'dashboard' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm ${adminScreen === 'dashboard' ? 'border-cyan-700 text-cyan-300' : 'border-slate-700 hover:bg-slate-800'}`}>Dashboard</button>
+            {(user.role === 'owner' || user.role === 'super_admin') && (
+              <button type="button" onClick={() => setAdminScreen('create-room')} aria-current={adminScreen === 'create-room' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm ${adminScreen === 'create-room' ? 'border-cyan-700 text-cyan-300' : 'border-slate-700 hover:bg-slate-800'}`}>Create Room</button>
+            )}
+            {(user.role === 'staff' || user.role === 'super_admin' || user.role === 'owner') && (
+              <button type="button" onClick={() => setAdminScreen('register-tenant')} aria-current={adminScreen === 'register-tenant' ? 'page' : undefined} className={`rounded-lg border px-3 py-2 text-sm ${adminScreen === 'register-tenant' ? 'border-cyan-700 text-cyan-300' : 'border-slate-700 hover:bg-slate-800'}`}>Tenant Registration</button>
+            )}
+          </nav>
+        )}
+
         {(error || dashboardError) && (
           <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-red-800 bg-red-950/60 p-3 text-sm text-red-200">
             <span>{error || dashboardError}</span>
@@ -447,6 +464,40 @@ export default function App() {
               setMaintenanceForm={setMaintenanceForm}
               onSubmitMaintenance={submitMaintenance}
             />
+          ) : adminScreen === 'create-room' && (user.role === 'owner' || user.role === 'super_admin') ? (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+              <h2 className="mb-4 text-lg font-semibold">Create Room</h2>
+              <form onSubmit={createRoom} className="grid gap-3 md:grid-cols-2">
+                <input placeholder="Room Number" value={roomForm.roomNumber} onChange={(e) => setRoomForm({ ...roomForm, roomNumber: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+                <input placeholder="Floor" value={roomForm.floor} onChange={(e) => setRoomForm({ ...roomForm, floor: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+                <select value={roomForm.type} onChange={(e) => setRoomForm({ ...roomForm, type: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white">
+                  <option value="single">Single</option>
+                  <option value="double">Double</option>
+                  <option value="suite">Suite</option>
+                  <option value="shared">Shared</option>
+                </select>
+                <input placeholder="Capacity" value={roomForm.maxCapacity} onChange={(e) => setRoomForm({ ...roomForm, maxCapacity: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+                <input placeholder="Monthly Rent" value={roomForm.monthlyRent} onChange={(e) => setRoomForm({ ...roomForm, monthlyRent: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white md:col-span-2" />
+                <button type="submit" className="rounded-lg bg-cyan-500 px-4 py-2 font-semibold text-slate-950 md:col-span-2">Add Room</button>
+              </form>
+            </div>
+          ) : adminScreen === 'register-tenant' && (user.role === 'staff' || user.role === 'super_admin' || user.role === 'owner') ? (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+              <h2 className="mb-4 text-lg font-semibold">Tenant Registration</h2>
+              <form onSubmit={registerTenant} className="grid gap-3 md:grid-cols-2">
+                <input required placeholder="Tenant Name" value={tenantForm.name} onChange={(e) => setTenantForm({ ...tenantForm, name: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+                <input placeholder="Phone" value={tenantForm.phone} onChange={(e) => setTenantForm({ ...tenantForm, phone: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+                <input required type="email" placeholder="Login email" value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+                <input required type="password" minLength={8} placeholder="Temporary password (8+ characters)" value={tenantForm.password} onChange={(e) => setTenantForm({ ...tenantForm, password: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+                <select value={tenantForm.roomId} onChange={(e) => setTenantForm({ ...tenantForm, roomId: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white md:col-span-2">
+                  <option value="">Register without room assignment</option>
+                  {dashboard.rooms.filter((room) => room.status !== 'maintenance' && room.occupancy < room.maxCapacity).map((room) => (
+                    <option key={room.id} value={room.id}>Room {room.roomNumber} · {room.maxCapacity - room.occupancy} bed(s) available</option>
+                  ))}
+                </select>
+                <button type="submit" className="rounded-lg bg-cyan-500 px-4 py-2 font-semibold text-slate-950 md:col-span-2">Register Tenant</button>
+              </form>
+            </div>
           ) : (
           <>
             <section className="grid gap-4 md:grid-cols-4">
@@ -479,44 +530,6 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-
-                {user.role === 'owner' || user.role === 'super_admin' ? (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-                    <h2 className="mb-4 text-lg font-semibold">Create Room</h2>
-                    <form onSubmit={createRoom} className="grid gap-3 md:grid-cols-2">
-                      <input placeholder="Room Number" value={roomForm.roomNumber} onChange={(e) => setRoomForm({ ...roomForm, roomNumber: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
-                      <input placeholder="Floor" value={roomForm.floor} onChange={(e) => setRoomForm({ ...roomForm, floor: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
-                      <select value={roomForm.type} onChange={(e) => setRoomForm({ ...roomForm, type: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white">
-                        <option value="single">Single</option>
-                        <option value="double">Double</option>
-                        <option value="suite">Suite</option>
-                        <option value="shared">Shared</option>
-                      </select>
-                      <input placeholder="Capacity" value={roomForm.maxCapacity} onChange={(e) => setRoomForm({ ...roomForm, maxCapacity: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
-                      <input placeholder="Monthly Rent" value={roomForm.monthlyRent} onChange={(e) => setRoomForm({ ...roomForm, monthlyRent: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white md:col-span-2" />
-                      <button type="submit" className="rounded-lg bg-cyan-500 px-4 py-2 font-semibold text-slate-950 md:col-span-2">Add Room</button>
-                    </form>
-                  </div>
-                ) : null}
-
-                {user.role === 'staff' || user.role === 'super_admin' || user.role === 'owner' ? (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-                    <h2 className="mb-4 text-lg font-semibold">Tenant Registration</h2>
-                    <form onSubmit={registerTenant} className="grid gap-3 md:grid-cols-2">
-                      <input required placeholder="Tenant Name" value={tenantForm.name} onChange={(e) => setTenantForm({ ...tenantForm, name: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
-                      <input placeholder="Phone" value={tenantForm.phone} onChange={(e) => setTenantForm({ ...tenantForm, phone: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
-                      <input required type="email" placeholder="Login email" value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
-                      <input required type="password" minLength={8} placeholder="Temporary password (8+ characters)" value={tenantForm.password} onChange={(e) => setTenantForm({ ...tenantForm, password: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
-                      <select value={tenantForm.roomId} onChange={(e) => setTenantForm({ ...tenantForm, roomId: e.target.value })} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white md:col-span-2">
-                        <option value="">Register without room assignment</option>
-                        {dashboard.rooms.filter((room) => room.status !== 'maintenance' && room.occupancy < room.maxCapacity).map((room) => (
-                          <option key={room.id} value={room.id}>Room {room.roomNumber} · {room.maxCapacity - room.occupancy} bed(s) available</option>
-                        ))}
-                      </select>
-                      <button type="submit" className="rounded-lg bg-cyan-500 px-4 py-2 font-semibold text-slate-950 md:col-span-2">Register Tenant</button>
-                    </form>
-                  </div>
-                ) : null}
 
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
                   <div className="mb-4">
