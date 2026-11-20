@@ -29,7 +29,7 @@ const roomSchema = new Schema<IRoom>({
   occupancy: { type: Number, required: true, default: 0 },
   monthlyRent: { type: Number, required: true },
   facilities: { type: [String], default: [] },
-  description: { type: String, required: true, default: '' },
+  description: { type: String, default: '' },
   status: {
     type: String,
     enum: ['available', 'occupied', 'partially_occupied', 'reserved', 'maintenance'],

@@ -23,6 +23,7 @@ const app = express();
 const server = createHttpServer(app);
 const io = initializeSocketServer(server);
 
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(
   cors({
