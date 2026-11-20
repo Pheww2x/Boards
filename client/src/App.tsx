@@ -446,7 +446,12 @@ export default function App() {
                 {connectionStatus === 'online' ? 'Online' : connectionStatus === 'offline' ? 'Reconnecting' : 'Connecting'}
               </div>
               <div className="text-sm text-slate-400">{user.name}</div>
-              <button onClick={logout} className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800">Logout</button>
+              <button type="button" onClick={logout} className="boards-logout-button">
+                <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                  <path d="M8 3.5H4.75A1.75 1.75 0 0 0 3 5.25v9.5a1.75 1.75 0 0 0 1.75 1.75H8M12.5 6.5 16 10l-3.5 3.5M7 10h9" />
+                </svg>
+                <span>Log out</span>
+              </button>
             </div>
           </div>
           {user.role !== 'tenant' && (

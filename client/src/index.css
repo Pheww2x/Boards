@@ -194,6 +194,56 @@ button, input, textarea, select {
   object-fit: contain;
 }
 
+.boards-logout-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid var(--boards-border);
+  border-radius: 9px;
+  background: #fff;
+  color: #53647b;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.boards-logout-button svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.boards-logout-button:hover {
+  transform: translateY(-1px);
+  border-color: #efc5c8;
+  background: #fff6f6;
+  color: var(--boards-danger);
+  box-shadow: 0 3px 8px rgb(180 62 67 / 9%);
+}
+
+.boards-logout-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.boards-logout-button:focus-visible {
+  outline: 3px solid rgb(8 118 232 / 25%);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boards-logout-button {
+    transition: none;
+  }
+}
+
 .boards-app [class~="bg-slate-900"] {
   background-color: #fff !important;
 }
