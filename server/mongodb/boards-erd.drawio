@@ -1,0 +1,106 @@
+<mxfile host="app.diagrams.net" modified="2026-11-20T06:35:00.000Z" agent="Boards" version="25.0.3" type="device">
+  <diagram id="boards-erd" name="Boards ERD">
+    <mxGraphModel dx="1600" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="users" value="&lt;b&gt;USERS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;name: string&lt;br&gt;email: string (unique)&lt;br&gt;passwordHash: string&lt;br&gt;role: enum&lt;br&gt;boardingHouseId: string (optional)&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F4F8FF;strokeColor=#3769A5;fontColor=#17365D;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="270" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="boardinghouses" value="&lt;b&gt;BOARDINGHOUSES&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK owner: users.id&lt;br&gt;name, contact, address: string&lt;br&gt;coordinates: { lat, lng }&lt;br&gt;floors, totalRooms: number&lt;br&gt;status: enum&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F4F8FF;strokeColor=#3769A5;fontColor=#17365D;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="370" y="50" width="280" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="rooms" value="&lt;b&gt;ROOMS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK boardingHouseId&lt;br&gt;roomNumber: string&lt;br&gt;floor, maxCapacity, occupancy: number&lt;br&gt;type, status: enum&lt;br&gt;monthlyRent: number&lt;br&gt;facilities: string[]&lt;br&gt;description, createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F4F8FF;strokeColor=#3769A5;fontColor=#17365D;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="710" y="50" width="300" height="250" as="geometry"/>
+        </mxCell>
+        <mxCell id="tenants" value="&lt;b&gt;TENANTS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK userId: string (optional)&lt;br&gt;FK boardingHouseId: string&lt;br&gt;FK roomId: string (optional)&lt;br&gt;name, email, phone: string&lt;br&gt;status: enum&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F4F8FF;strokeColor=#3769A5;fontColor=#17365D;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="50" width="300" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="payments" value="&lt;b&gt;PAYMENTS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK tenantId: string&lt;br&gt;FK roomId: string&lt;br&gt;FK boardingHouseId: string&lt;br&gt;amount: number&lt;br&gt;method, status: enum&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F5FBF7;strokeColor=#4A8B68;fontColor=#1D5437;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="390" width="270" height="210" as="geometry"/>
+        </mxCell>
+        <mxCell id="reservations" value="&lt;b&gt;RESERVATIONS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK roomId: string&lt;br&gt;FK tenantId: string&lt;br&gt;FK boardingHouseId: string&lt;br&gt;checkInDate, checkOutDate: string&lt;br&gt;deposit: number&lt;br&gt;status: enum&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F5FBF7;strokeColor=#4A8B68;fontColor=#1D5437;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="370" y="390" width="280" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="maintenancerequests" value="&lt;b&gt;MAINTENANCE REQUESTS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK tenantId: string&lt;br&gt;FK boardingHouseId: string&lt;br&gt;FK roomId: string (optional)&lt;br&gt;title, description: string&lt;br&gt;status: enum&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F5FBF7;strokeColor=#4A8B68;fontColor=#1D5437;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="710" y="390" width="300" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="roomassignments" value="&lt;b&gt;ROOM ASSIGNMENTS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK tenantId: string&lt;br&gt;FK roomId: string&lt;br&gt;FK boardingHouseId: string&lt;br&gt;assignedAt: string&lt;br&gt;endedAt: string (optional)&lt;br&gt;endReason: enum (optional)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F5FBF7;strokeColor=#4A8B68;fontColor=#1D5437;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="390" width="300" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="notifications" value="&lt;b&gt;NOTIFICATIONS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK userId: string&lt;br&gt;title, message: string&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFF9F1;strokeColor=#B98544;fontColor=#70451C;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="730" width="270" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="announcements" value="&lt;b&gt;ANNOUNCEMENTS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;message: string&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFF9F1;strokeColor=#B98544;fontColor=#70451C;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="370" y="730" width="280" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="eventlogs" value="&lt;b&gt;EVENT LOGS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;eventId, eventType: string&lt;br&gt;entityId: string (polymorphic, optional)&lt;br&gt;FK boardingHouseId: string (optional)&lt;br&gt;sequence: number&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFF9F1;strokeColor=#B98544;fontColor=#70451C;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="710" y="730" width="300" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="auditlogs" value="&lt;b&gt;AUDIT LOGS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;action: string&lt;br&gt;actorId: string (user ID or system)&lt;br&gt;details: string&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFF9F1;strokeColor=#B98544;fontColor=#70451C;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="730" width="300" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="note" value="Relationships are application-level references using custom string id fields; MongoDB does not enforce foreign keys. Every document also has MongoDB's _id." style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#53647B;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="40" y="970" width="1200" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_user_house" value="owner / assignment" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="users" target="boardinghouses">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_house_room" value="contains" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="boardinghouses" target="rooms">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_room_tenant" value="current room" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERzeroToOne;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="rooms" target="tenants">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_user_tenant" value="optional account" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERzeroToOne;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="users" target="tenants">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_tenant_payment" value="payments" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="tenants" target="payments">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_room_payment" value="payments" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="rooms" target="payments">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_house_payment" value="payments" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="boardinghouses" target="payments">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_tenant_reservation" value="reservations" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="tenants" target="reservations">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_room_reservation" value="reservations" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="rooms" target="reservations">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_house_reservation" value="reservations" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="boardinghouses" target="reservations">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_tenant_maintenance" value="requests" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="tenants" target="maintenancerequests">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_room_maintenance" value="concerns" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERzeroToOne;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="rooms" target="maintenancerequests">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_house_maintenance" value="requests" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="boardinghouses" target="maintenancerequests">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_tenant_assignment" value="history" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="tenants" target="roomassignments">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_room_assignment" value="history" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="rooms" target="roomassignments">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_house_assignment" value="history" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="boardinghouses" target="roomassignments">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_user_notification" value="receives" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="users" target="notifications">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_house_event" value="scope (optional)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERzeroToOne;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="boardinghouses" target="eventlogs">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_user_audit" value="actorId (may be system)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERzeroToOne;startArrow=ERzeroToMany;dashed=1;strokeColor=#9AA9BA;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="users" target="auditlogs">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

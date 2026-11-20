@@ -542,7 +542,7 @@ export default function App() {
                           <div>Floor {room.floor}</div>
                           <div>{room.occupancy}/{room.maxCapacity} occupied</div>
                           <div>₱{room.monthlyRent.toLocaleString()}/month</div>
-                          <div>{room.facilities.join(', ') || 'Standard amenities'}</div>
+                          {room.facilities.length > 0 && <div>{room.facilities.join(', ')}</div>}
                         </div>
                       </div>
                     ))}
@@ -745,7 +745,7 @@ function TenantDashboard({
                 <InfoItem label="Boarding House" value={dashboard.boardingHouse?.name ?? 'Boarding House'} />
                 <InfoItem label="Address" value={dashboard.boardingHouse?.address ?? 'Address not listed'} />
                 <InfoItem label="Room Type" value={room.type} />
-                <InfoItem label="Facilities" value={room.facilities.join(', ') || 'Standard amenities'} />
+                {room.facilities.length > 0 && <InfoItem label="Facilities" value={room.facilities.join(', ')} />}
               </div>
             ) : (
               <p className="mt-3 text-sm text-slate-400">

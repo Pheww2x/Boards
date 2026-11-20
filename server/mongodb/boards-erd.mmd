@@ -1,0 +1,146 @@
+erDiagram
+    USERS {
+        string id PK "application ID"
+        string name
+        string email UK
+        string passwordHash
+        string role
+        string boardingHouseId FK "optional"
+        string createdAt
+    }
+
+    BOARDINGHOUSES {
+        string id PK "application ID"
+        string name
+        string owner FK "users.id"
+        string contact
+        string address
+        object coordinates
+        number floors
+        number totalRooms
+        string status
+        string createdAt
+    }
+
+    ROOMS {
+        string id PK "application ID"
+        string boardingHouseId FK
+        string roomNumber
+        number floor
+        string type
+        number maxCapacity
+        number occupancy
+        number monthlyRent
+        array facilities
+        string description
+        string status
+        string createdAt
+    }
+
+    TENANTS {
+        string id PK "application ID"
+        string userId FK "optional users.id"
+        string name
+        string email
+        string phone
+        string boardingHouseId FK
+        string roomId FK "optional"
+        string status
+        string createdAt
+    }
+
+    RESERVATIONS {
+        string id PK "application ID"
+        string roomId FK
+        string tenantId FK
+        string boardingHouseId FK
+        string checkInDate
+        string checkOutDate
+        number deposit
+        string status
+        string createdAt
+    }
+
+    PAYMENTS {
+        string id PK "application ID"
+        string tenantId FK
+        string roomId FK
+        string boardingHouseId FK
+        number amount
+        string method
+        string status
+        string createdAt
+    }
+
+    MAINTENANCEREQUESTS {
+        string id PK "application ID"
+        string tenantId FK
+        string boardingHouseId FK
+        string roomId FK "optional"
+        string title
+        string description
+        string status
+        string createdAt
+    }
+
+    ROOMASSIGNMENTS {
+        string id PK "application ID"
+        string tenantId FK
+        string roomId FK
+        string boardingHouseId FK
+        string assignedAt
+        string endedAt "optional"
+        string endReason "optional"
+    }
+
+    NOTIFICATIONS {
+        string id PK "application ID"
+        string userId FK
+        string title
+        string message
+        string createdAt
+    }
+
+    ANNOUNCEMENTS {
+        string id PK "application ID"
+        string message
+        string createdAt
+    }
+
+    EVENTLOGS {
+        string id PK "application ID"
+        string eventId
+        string eventType
+        string entityId "polymorphic, optional"
+        string boardingHouseId FK "optional"
+        number sequence
+        string createdAt
+    }
+
+    AUDITLOGS {
+        string id PK "application ID"
+        string action
+        string actorId "users.id or system"
+        string details
+        string createdAt
+    }
+
+    USERS o|--o{ BOARDINGHOUSES : "owner / boardingHouseId"
+    BOARDINGHOUSES ||--o{ ROOMS : contains
+    BOARDINGHOUSES ||--o{ TENANTS : serves
+    USERS o|--o| TENANTS : "optional user account"
+    ROOMS o|--o{ TENANTS : "optional current assignment"
+    TENANTS ||--o{ PAYMENTS : has
+    ROOMS ||--o{ PAYMENTS : billed_for
+    BOARDINGHOUSES ||--o{ PAYMENTS : records
+    TENANTS ||--o{ RESERVATIONS : makes
+    ROOMS ||--o{ RESERVATIONS : reserved
+    BOARDINGHOUSES ||--o{ RESERVATIONS : records
+    TENANTS ||--o{ MAINTENANCEREQUESTS : submits
+    ROOMS o|--o{ MAINTENANCEREQUESTS : concerns
+    BOARDINGHOUSES ||--o{ MAINTENANCEREQUESTS : receives
+    TENANTS ||--o{ ROOMASSIGNMENTS : history
+    ROOMS ||--o{ ROOMASSIGNMENTS : history
+    BOARDINGHOUSES ||--o{ ROOMASSIGNMENTS : records
+    USERS ||--o{ NOTIFICATIONS : receives
+    BOARDINGHOUSES o|--o{ EVENTLOGS : scopes
