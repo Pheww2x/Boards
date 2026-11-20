@@ -37,7 +37,9 @@ router.post('/', requireAuth, requireRole('tenant', 'staff'), asyncHandler(async
   if (!tenant) return res.status(404).json({ message: 'Tenant profile not found' });
   if (!await canAccessRequest(req.user!, tenant.id)) return res.status(403).json({ message: 'Forbidden' });
   if (!title || !description) return res.status(400).json({ message: 'Title and description are required' });
-  if (payload.roomId && tenant.roomId !== payload.roomId) return res.status(400).json({ message: 'Room is not assigned to this tenant' });
+  if (req.user?.role !== 'tenant' && payload.roomId && tenant.roomId !== payload.roomId) {
+    return res.status(400).json({ message: 'Room is not assigned to this tenant' });
+  }
 
   const request = await MaintenanceRequest.create({
     id: `maintenance-${Date.now()}-${Math.random().toString(16).slice(2)}`,

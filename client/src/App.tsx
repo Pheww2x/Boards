@@ -119,7 +119,7 @@ export default function App() {
   const [roomForm, setRoomForm] = useState({ roomNumber: '', floor: '', type: 'single', maxCapacity: '', monthlyRent: '' });
   const [tenantForm, setTenantForm] = useState({ name: '', email: '', phone: '', password: '', roomId: '' });
   const [paymentForm, setPaymentForm] = useState({ tenantId: '', roomId: '', amount: '2500', method: 'cash' });
-  const [maintenanceForm, setMaintenanceForm] = useState({ title: 'AC issue', description: 'Cooling is not working in room 201', roomId: 'room-201' });
+  const [maintenanceForm, setMaintenanceForm] = useState({ title: 'AC issue', description: 'Cooling is not working in room 201' });
   const [transferTargets, setTransferTargets] = useState<Record<string, string>>({});
 
   const refreshDashboard = async () => {
@@ -357,9 +357,8 @@ export default function App() {
       await api.post('/maintenance', {
         title: maintenanceForm.title,
         description: maintenanceForm.description,
-        roomId: maintenanceForm.roomId,
       });
-      setMaintenanceForm({ title: 'AC issue', description: 'A follow-up maintenance problem', roomId: 'room-201' });
+      setMaintenanceForm({ title: 'AC issue', description: 'A follow-up maintenance problem' });
       refreshDashboard();
     } catch (err: any) {
       setError(err.response?.data?.message ?? 'Could not submit maintenance request');
@@ -719,8 +718,8 @@ function TenantDashboard({
   onSubmitMaintenance,
 }: {
   dashboard: DashboardState;
-  maintenanceForm: { title: string; description: string; roomId: string };
-  setMaintenanceForm: Dispatch<SetStateAction<{ title: string; description: string; roomId: string }>>;
+  maintenanceForm: { title: string; description: string };
+  setMaintenanceForm: Dispatch<SetStateAction<{ title: string; description: string }>>;
   onSubmitMaintenance: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   const room = dashboard.rooms[0];
