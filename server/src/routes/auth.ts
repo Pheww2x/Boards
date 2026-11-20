@@ -27,6 +27,7 @@ router.post('/login', asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      boardingHouseId: user.boardingHouseId,
     },
   });
 }));

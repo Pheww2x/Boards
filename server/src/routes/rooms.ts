@@ -39,16 +39,42 @@ router.get('/', requireAuth, requireRole('super_admin', 'owner', 'staff', 'tenan
 
 router.post('/', requireAuth, requireRole('super_admin', 'owner'), asyncHandler(async (req, res) => {
   const payload = req.body ?? {};
-  const boardingHouseId = req.user?.role === 'super_admin'
-    ? payload.boardingHouseId ?? (await BoardingHouse.findOne().exec())?.id
-    : req.user?.boardingHouseId;
-  const boardingHouse = boardingHouseId ? await BoardingHouse.findOne({ id: boardingHouseId }).exec() : null;
+  const requestedBoardingHouseId = typeof payload.boardingHouseId === 'string'
+    ? payload.boardingHouseId.trim()
+    : '';
+  let boardingHouseId = req.user?.role === 'super_admin'
+    ? requestedBoardingHouseId || (await BoardingHouse.findOne().exec())?.id
+    : requestedBoardingHouseId || req.user?.boardingHouseId;
+  let boardingHouse = boardingHouseId
+    ? await BoardingHouse.findOne({ id: boardingHouseId }).exec()
+    : null;
+
+  if (boardingHouse && req.user?.role !== 'super_admin' &&
+    !await canAccessBoardingHouse(req.user!, boardingHouse.id)) {
+    return res.status(403).json({ message: 'You can only create rooms in your assigned or owned boarding house' });
+  }
+
+  if (!boardingHouse && req.user?.role === 'owner' && !requestedBoardingHouseId) {
+    const ownedHouses = await BoardingHouse.find({ owner: req.user.id }).limit(2).exec();
+    if (ownedHouses.length === 1) {
+      boardingHouse = ownedHouses[0];
+      boardingHouseId = boardingHouse.id;
+    } else if (ownedHouses.length > 1) {
+      return res.status(400).json({ message: 'Select one of your boarding houses before creating a room' });
+    }
+  }
+
   const roomNumber = typeof payload.roomNumber === 'string' ? payload.roomNumber.trim() : '';
   const maxCapacity = Number(payload.maxCapacity);
   const monthlyRent = Number(payload.monthlyRent);
   const floor = Number(payload.floor);
 
-  if (!boardingHouse) return res.status(400).json({ message: 'A valid boarding house is required' });
+  if (!boardingHouse) {
+    if (!boardingHouseId) {
+      return res.status(400).json({ message: 'No boarding house is assigned to this account. Ask an administrator to link it to an existing boarding house.' });
+    }
+    return res.status(400).json({ message: 'The selected or assigned boarding house was not found. Use an existing boarding house ID.' });
+  }
   if (!roomNumber || !Number.isInteger(maxCapacity) || maxCapacity < 1 || !Number.isInteger(floor) || floor < 1 || !Number.isFinite(monthlyRent) || monthlyRent < 0) {
     return res.status(400).json({ message: 'Room number, floor, capacity, and rent must be valid' });
   }
