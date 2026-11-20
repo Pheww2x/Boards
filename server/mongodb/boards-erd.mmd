@@ -103,6 +103,7 @@ erDiagram
 
     ANNOUNCEMENTS {
         string id PK "application ID"
+        string boardingHouseId FK "optional; absent means global"
         string message
         string createdAt
     }
@@ -144,3 +145,4 @@ erDiagram
     BOARDINGHOUSES ||--o{ ROOMASSIGNMENTS : records
     USERS ||--o{ NOTIFICATIONS : receives
     BOARDINGHOUSES o|--o{ EVENTLOGS : scopes
+    BOARDINGHOUSES o|--o{ ANNOUNCEMENTS : scopes

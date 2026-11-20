@@ -120,6 +120,7 @@ export default function App() {
   const [tenantForm, setTenantForm] = useState({ name: '', email: '', phone: '', password: '', roomId: '' });
   const [paymentForm, setPaymentForm] = useState({ tenantId: '', roomId: '', amount: '2500', method: 'cash' });
   const [maintenanceForm, setMaintenanceForm] = useState({ title: 'AC issue', description: 'Cooling is not working in room 201' });
+  const [announcementMessage, setAnnouncementMessage] = useState('');
   const [transferTargets, setTransferTargets] = useState<Record<string, string>>({});
 
   const refreshDashboard = async () => {
@@ -205,6 +206,7 @@ export default function App() {
       'tenant:transferred',
       'tenant:checkedOut',
       'payment:recorded',
+      'announcement:created',
       'maintenance:created',
       'maintenance:updated',
       'reservation:created',
@@ -362,6 +364,19 @@ export default function App() {
       refreshDashboard();
     } catch (err: any) {
       setError(err.response?.data?.message ?? 'Could not submit maintenance request');
+    }
+  };
+
+  const publishAnnouncement = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    try {
+      await api.post('/announcements', { message: announcementMessage });
+      setAnnouncementMessage('');
+      await refreshDashboard();
+    } catch (requestError) {
+      setError(axios.isAxiosError(requestError)
+        ? requestError.response?.data?.message ?? 'Could not publish announcement'
+        : 'Could not publish announcement');
     }
   };
 
@@ -614,6 +629,22 @@ export default function App() {
 
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
                   <h2 className="mb-3 text-lg font-semibold">Announcements</h2>
+                  {(user.role === 'owner' || user.role === 'super_admin') && (
+                    <form onSubmit={publishAnnouncement} className="mb-4 space-y-2">
+                      <label className="sr-only" htmlFor="announcement-message">Announcement message</label>
+                      <textarea
+                        id="announcement-message"
+                        required
+                        value={announcementMessage}
+                        onChange={(event) => setAnnouncementMessage(event.target.value)}
+                        placeholder="Write an announcement for your boarding house"
+                        className="min-h-[90px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+                      />
+                      <button type="submit" className="w-full rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-white">
+                        Publish announcement
+                      </button>
+                    </form>
+                  )}
                   <div className="space-y-3">
                     {dashboard.announcements.length > 0 ? dashboard.announcements.map((item) => (
                       <div key={item.id} className="rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-200">{item.message}</div>

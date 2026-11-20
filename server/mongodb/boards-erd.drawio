@@ -31,8 +31,8 @@
         <mxCell id="notifications" value="&lt;b&gt;NOTIFICATIONS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK userId: string&lt;br&gt;title, message: string&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFF9F1;strokeColor=#B98544;fontColor=#70451C;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
           <mxGeometry x="40" y="730" width="270" height="170" as="geometry"/>
         </mxCell>
-        <mxCell id="announcements" value="&lt;b&gt;ANNOUNCEMENTS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;message: string&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFF9F1;strokeColor=#B98544;fontColor=#70451C;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
-          <mxGeometry x="370" y="730" width="280" height="150" as="geometry"/>
+        <mxCell id="announcements" value="&lt;b&gt;ANNOUNCEMENTS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;FK boardingHouseId: string (optional)&lt;br&gt;message: string&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFF9F1;strokeColor=#B98544;fontColor=#70451C;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
+          <mxGeometry x="370" y="730" width="280" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="eventlogs" value="&lt;b&gt;EVENT LOGS&lt;/b&gt;&lt;br&gt;PK id: string&lt;br&gt;eventId, eventType: string&lt;br&gt;entityId: string (polymorphic, optional)&lt;br&gt;FK boardingHouseId: string (optional)&lt;br&gt;sequence: number&lt;br&gt;createdAt: string" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFF9F1;strokeColor=#B98544;fontColor=#70451C;fontSize=14;align=left;verticalAlign=middle;spacingLeft=14;spacingRight=10;spacingTop=12;spacingBottom=12;" vertex="1" parent="1">
           <mxGeometry x="710" y="730" width="300" height="190" as="geometry"/>
@@ -92,6 +92,9 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_user_notification" value="receives" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERone;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="users" target="notifications">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_house_announcement" value="scopes (optional; missing = global)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERzeroToOne;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="boardinghouses" target="announcements">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_house_event" value="scope (optional)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;endArrow=ERzeroToOne;startArrow=ERzeroToMany;strokeColor=#6B7F99;fontColor=#53647B;fontSize=11;" edge="1" parent="1" source="boardinghouses" target="eventlogs">

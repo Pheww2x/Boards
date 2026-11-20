@@ -3,12 +3,14 @@ import { configureApiSerialization } from './schemaOptions';
 
 export interface IAnnouncement extends Document {
   id: string;
+  boardingHouseId?: string;
   message: string;
   createdAt: string;
 }
 
 const announcementSchema = new Schema<IAnnouncement>({
   id: { type: String, required: true, unique: true },
+  boardingHouseId: { type: String, index: true },
   message: { type: String, required: true },
   createdAt: { type: String, required: true },
 });

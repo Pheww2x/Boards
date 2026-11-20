@@ -145,6 +145,7 @@ const validators = {
       required: ['id', 'message', 'createdAt'],
       properties: {
         id: { bsonType: 'string' },
+        boardingHouseId: { bsonType: 'string' },
         message: { bsonType: 'string' },
         createdAt: { bsonType: 'string' },
       },

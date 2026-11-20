@@ -89,3 +89,7 @@ export function emitRealtimeEvent(
     socketServer.to(`house:${target.boardingHouseId}`).emit(eventName, payload);
   }
 }
+
+export function emitGlobalRealtimeEvent(eventName: string, payload: unknown) {
+  socketServer?.emit(eventName, payload);
+}

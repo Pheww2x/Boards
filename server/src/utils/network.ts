@@ -1,1 +1,1 @@
-export { emitRealtimeEvent } from '../sockets';
+export { emitGlobalRealtimeEvent, emitRealtimeEvent } from '../sockets';

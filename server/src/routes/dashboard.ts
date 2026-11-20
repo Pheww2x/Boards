@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
-import Announcement from '../models/Announcement';
 import BoardingHouse from '../models/BoardingHouse';
 import MaintenanceRequest from '../models/MaintenanceRequest';
 import Notification from '../models/Notification';
 import Payment from '../models/Payment';
 import Room from '../models/Room';
 import Tenant from '../models/Tenant';
+import { getVisibleAnnouncements } from '../services/announcements';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
@@ -21,9 +21,8 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     Payment.find().exec(),
     MaintenanceRequest.find().exec(),
     BoardingHouse.find().exec(),
-    Announcement.find().sort({ createdAt: 1, _id: 1 }).exec(),
+    getVisibleAnnouncements(user),
   ]);
-  const recentAnnouncements = announcements.slice(-10);
 
   if (user.role === 'tenant') {
     const tenant = allTenants.find((item) => item.userId === user.id);
@@ -46,7 +45,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
         payments: [],
         maintenanceRequests: [],
         notifications: await Notification.find({ userId: user.id }).exec(),
-        announcements: recentAnnouncements,
+        announcements,
       });
     }
 
@@ -77,7 +76,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
       payments,
       maintenanceRequests: allMaintenanceRequests.filter((item) => item.tenantId === tenant.id),
       notifications: await Notification.find({ userId: { $in: [user.id, 'all'] } }).exec(),
-      announcements: recentAnnouncements,
+      announcements,
     });
   }
 
@@ -111,7 +110,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     payments,
     maintenanceRequests,
     notifications,
-    announcements: recentAnnouncements,
+    announcements,
     boardingHouses,
   });
 }));
