@@ -118,7 +118,7 @@ export default function App() {
 
   const [roomForm, setRoomForm] = useState({ roomNumber: '', floor: '', type: 'single', maxCapacity: '', monthlyRent: '' });
   const [tenantForm, setTenantForm] = useState({ name: '', email: '', phone: '', password: '', roomId: '' });
-  const [paymentForm, setPaymentForm] = useState({ tenantId: 'tenant-1', roomId: 'room-201', amount: '2500', method: 'cash' });
+  const [paymentForm, setPaymentForm] = useState({ tenantId: '', roomId: '', amount: '2500', method: 'cash' });
   const [maintenanceForm, setMaintenanceForm] = useState({ title: 'AC issue', description: 'Cooling is not working in room 201', roomId: 'room-201' });
   const [transferTargets, setTransferTargets] = useState<Record<string, string>>({});
 
@@ -172,6 +172,22 @@ export default function App() {
     if (!token) return;
     refreshDashboard();
   }, [token]);
+
+  useEffect(() => {
+    const assignedTenants = dashboard?.tenants.filter((tenant) => tenant.roomId) ?? [];
+    if (!assignedTenants.length) {
+      setPaymentForm((current) => current.tenantId || current.roomId
+        ? { ...current, tenantId: '', roomId: '' }
+        : current);
+      return;
+    }
+    setPaymentForm((current) => {
+      const selected = assignedTenants.find((tenant) => tenant.id === current.tenantId);
+      if (selected) return current.roomId === selected.roomId ? current : { ...current, roomId: selected.roomId ?? '' };
+      const first = assignedTenants[0];
+      return { ...current, tenantId: first.id, roomId: first.roomId ?? '' };
+    });
+  }, [dashboard?.tenants]);
 
   useEffect(() => {
     if (!token) return;
@@ -325,11 +341,10 @@ export default function App() {
     try {
       await api.post('/payments', {
         tenantId: paymentForm.tenantId,
-        roomId: paymentForm.roomId,
         amount: Number(paymentForm.amount),
         method: paymentForm.method,
       });
-      setPaymentForm({ tenantId: 'tenant-1', roomId: 'room-201', amount: '2500', method: 'cash' });
+      setPaymentForm((current) => ({ ...current, amount: '2500', method: 'cash' }));
       refreshDashboard();
     } catch (err: any) {
       setError(err.response?.data?.message ?? 'Could not record payment');

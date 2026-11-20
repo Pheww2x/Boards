@@ -30,14 +30,16 @@ router.get('/', requireAuth, requireRole('super_admin', 'owner', 'staff', 'tenan
 
 router.post('/', requireAuth, requireRole('super_admin', 'staff', 'owner'), asyncHandler(async (req, res) => {
   const payload = req.body ?? {};
-  const [tenant, room] = await Promise.all([
-    typeof payload.tenantId === 'string' ? Tenant.findOne({ id: payload.tenantId }).exec() : null,
-    typeof payload.roomId === 'string' ? Room.findOne({ id: payload.roomId }).exec() : null,
-  ]);
+  const tenant = typeof payload.tenantId === 'string'
+    ? await Tenant.findOne({ id: payload.tenantId }).exec()
+    : null;
+  if (!tenant) return res.status(400).json({ message: 'A valid tenant is required' });
+  if (!tenant.roomId) return res.status(400).json({ message: 'The tenant must be assigned to a room before recording a payment' });
+  const room = await Room.findOne({ id: tenant.roomId }).exec();
   const amount = Number(payload.amount);
   const allowedMethods = ['cash', 'gcash', 'bank_transfer', 'other'];
 
-  if (!tenant || !room) return res.status(400).json({ message: 'A valid tenant and room are required' });
+  if (!room) return res.status(400).json({ message: 'The tenant\'s assigned room was not found' });
   if (!await canAccessTenant(req.user!, tenant.id) || tenant.boardingHouseId !== room.boardingHouseId || tenant.roomId !== room.id) {
     return res.status(403).json({ message: 'Tenant and room assignment is not accessible' });
   }
