@@ -69,7 +69,7 @@ type DashboardState = {
     monthlyIncome: number;
   };
   notifications: Array<{ id: string; title: string; message: string }>;
-  announcements: Array<{ id: string; message: string }>;
+  announcements: Array<{ id: string; message: string; boardingHouseId?: string }>;
   rooms: Room[];
   tenants: Tenant[];
   payments: Payment[];
@@ -121,6 +121,8 @@ export default function App() {
   const [paymentForm, setPaymentForm] = useState({ tenantId: '', roomId: '', amount: '2500', method: 'cash' });
   const [maintenanceForm, setMaintenanceForm] = useState({ title: 'AC issue', description: 'Cooling is not working in room 201' });
   const [announcementMessage, setAnnouncementMessage] = useState('');
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [editingAnnouncementMessage, setEditingAnnouncementMessage] = useState('');
   const [transferTargets, setTransferTargets] = useState<Record<string, string>>({});
 
   const refreshDashboard = async () => {
@@ -207,6 +209,8 @@ export default function App() {
       'tenant:checkedOut',
       'payment:recorded',
       'announcement:created',
+      'announcement:updated',
+      'announcement:deleted',
       'maintenance:created',
       'maintenance:updated',
       'reservation:created',
@@ -377,6 +381,33 @@ export default function App() {
       setError(axios.isAxiosError(requestError)
         ? requestError.response?.data?.message ?? 'Could not publish announcement'
         : 'Could not publish announcement');
+    }
+  };
+
+  const saveAnnouncementEdit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingAnnouncementId) return;
+    try {
+      await api.patch(`/announcements/${editingAnnouncementId}`, { message: editingAnnouncementMessage });
+      setEditingAnnouncementId(null);
+      setEditingAnnouncementMessage('');
+      await refreshDashboard();
+    } catch (requestError) {
+      setError(axios.isAxiosError(requestError)
+        ? requestError.response?.data?.message ?? 'Could not update announcement'
+        : 'Could not update announcement');
+    }
+  };
+
+  const deleteAnnouncement = async (id: string) => {
+    if (!window.confirm('Delete this announcement? This cannot be undone.')) return;
+    try {
+      await api.delete(`/announcements/${id}`);
+      await refreshDashboard();
+    } catch (requestError) {
+      setError(axios.isAxiosError(requestError)
+        ? requestError.response?.data?.message ?? 'Could not delete announcement'
+        : 'Could not delete announcement');
     }
   };
 
@@ -647,7 +678,45 @@ export default function App() {
                   )}
                   <div className="space-y-3">
                     {dashboard.announcements.length > 0 ? dashboard.announcements.map((item) => (
-                      <div key={item.id} className="rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-200">{item.message}</div>
+                      <div key={item.id} className="rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-200">
+                        {editingAnnouncementId === item.id ? (
+                          <form onSubmit={saveAnnouncementEdit} className="space-y-2">
+                            <label className="sr-only" htmlFor={`edit-announcement-${item.id}`}>Edit announcement</label>
+                            <textarea
+                              id={`edit-announcement-${item.id}`}
+                              required
+                              value={editingAnnouncementMessage}
+                              onChange={(event) => setEditingAnnouncementMessage(event.target.value)}
+                              className="min-h-[90px] w-full rounded-lg border border-slate-700 bg-white px-3 py-2 text-sm text-slate-800"
+                            />
+                            <div className="flex justify-end gap-3">
+                              <button type="button" onClick={() => setEditingAnnouncementId(null)} className="text-xs font-medium text-slate-500 hover:text-slate-800">Cancel</button>
+                              <button type="submit" className="text-xs font-semibold text-cyan-700 hover:text-cyan-900">Save changes</button>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="min-w-0 flex-1 whitespace-pre-wrap">{item.message}</p>
+                            {user.role === 'owner' && item.boardingHouseId && (
+                              <div className="flex shrink-0 gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingAnnouncementId(item.id);
+                                    setEditingAnnouncementMessage(item.message);
+                                  }}
+                                  className="text-xs font-medium text-cyan-700 hover:text-cyan-900"
+                                >
+                                  Edit
+                                </button>
+                                <button type="button" onClick={() => deleteAnnouncement(item.id)} className="text-xs font-medium text-red-600 hover:text-red-800">
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     )) : <div className="text-sm text-slate-400">No announcements.</div>}
                   </div>
                 </div>

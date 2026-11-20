@@ -3,15 +3,19 @@ import BoardingHouse from '../models/BoardingHouse';
 import Tenant from '../models/Tenant';
 import type { AuthUser } from '../middleware/auth';
 
+export async function getOwnerBoardingHouseIds(user: AuthUser) {
+  const filter = user.boardingHouseId
+    ? { $or: [{ owner: user.id }, { id: user.boardingHouseId }] }
+    : { owner: user.id };
+  const houses = await BoardingHouse.find(filter).select({ id: 1 }).lean().exec();
+  return houses.map((house) => house.id);
+}
+
 export async function getVisibleAnnouncements(user: AuthUser) {
   let boardingHouseIds: string[] | null = null;
 
   if (user.role === 'owner') {
-    const filter = user.boardingHouseId
-      ? { $or: [{ owner: user.id }, { id: user.boardingHouseId }] }
-      : { owner: user.id };
-    const houses = await BoardingHouse.find(filter).select({ id: 1 }).lean().exec();
-    boardingHouseIds = houses.map((house) => house.id);
+    boardingHouseIds = await getOwnerBoardingHouseIds(user);
   } else if (user.role === 'staff') {
     boardingHouseIds = user.boardingHouseId ? [user.boardingHouseId] : [];
   } else if (user.role === 'tenant') {

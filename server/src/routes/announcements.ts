@@ -4,10 +4,24 @@ import Announcement from '../models/Announcement';
 import BoardingHouse from '../models/BoardingHouse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { createId } from '../utils/id';
-import { getVisibleAnnouncements } from '../services/announcements';
+import { getOwnerBoardingHouseIds, getVisibleAnnouncements } from '../services/announcements';
 import { emitGlobalRealtimeEvent, emitRealtimeEvent } from '../utils/network';
 
 const router = Router();
+
+function emitAnnouncementChange(eventName: string, announcement: { id: string; boardingHouseId?: string }) {
+  if (announcement.boardingHouseId) {
+    emitRealtimeEvent(eventName, announcement, { boardingHouseId: announcement.boardingHouseId });
+  } else {
+    emitGlobalRealtimeEvent(eventName, announcement);
+  }
+}
+
+async function findAnnouncementForUser(id: string, user: NonNullable<Express.Request['user']>) {
+  if (user.role === 'super_admin') return Announcement.findOne({ id }).exec();
+  const boardingHouseIds = await getOwnerBoardingHouseIds(user);
+  return Announcement.findOne({ id, boardingHouseId: { $in: boardingHouseIds } }).exec();
+}
 
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const announcements = await getVisibleAnnouncements(req.user!);
@@ -21,20 +35,15 @@ router.post('/', requireAuth, requireRole('super_admin', 'owner'), asyncHandler(
 
   let boardingHouseId: string | undefined;
   if (req.user?.role === 'owner') {
-    const assignedHouse = req.user.boardingHouseId
-      ? await BoardingHouse.findOne({ id: req.user.boardingHouseId }).select({ id: 1 }).lean().exec()
-      : null;
-    if (assignedHouse) {
-      boardingHouseId = assignedHouse.id;
+    const ownerBoardingHouseIds = await getOwnerBoardingHouseIds(req.user);
+    if (req.user.boardingHouseId && ownerBoardingHouseIds.includes(req.user.boardingHouseId)) {
+      boardingHouseId = req.user.boardingHouseId;
+    } else if (ownerBoardingHouseIds.length === 1) {
+      boardingHouseId = ownerBoardingHouseIds[0];
+    } else if (ownerBoardingHouseIds.length > 1) {
+      return res.status(400).json({ message: 'Your account must be assigned to one boarding house before posting an announcement' });
     } else {
-      const ownedHouses = await BoardingHouse.find({ owner: req.user!.id }).select({ id: 1 }).limit(2).lean().exec();
-      if (ownedHouses.length > 1) {
-        return res.status(400).json({ message: 'Your account must be assigned to one boarding house before posting an announcement' });
-      }
-      if (!ownedHouses.length) {
-        return res.status(400).json({ message: 'No boarding house is assigned to this Owner account' });
-      }
-      boardingHouseId = ownedHouses[0].id;
+      return res.status(400).json({ message: 'No boarding house is assigned to this Owner account' });
     }
   }
 
@@ -44,12 +53,32 @@ router.post('/', requireAuth, requireRole('super_admin', 'owner'), asyncHandler(
     message,
     createdAt: new Date().toISOString(),
   });
-  if (boardingHouseId) {
-    emitRealtimeEvent('announcement:created', announcement, { boardingHouseId });
-  } else {
-    emitGlobalRealtimeEvent('announcement:created', announcement);
-  }
+  emitAnnouncementChange('announcement:created', announcement);
   return res.status(201).json(announcement);
+}));
+
+router.patch('/:id', requireAuth, requireRole('super_admin', 'owner'), asyncHandler(async (req, res) => {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+  if (!message) return res.status(400).json({ message: 'Announcement message is required' });
+
+  const announcement = await findAnnouncementForUser(id, req.user!);
+  if (!announcement) return res.status(404).json({ message: 'Announcement not found' });
+
+  announcement.message = message;
+  await announcement.save();
+  emitAnnouncementChange('announcement:updated', announcement);
+  return res.json(announcement);
+}));
+
+router.delete('/:id', requireAuth, requireRole('super_admin', 'owner'), asyncHandler(async (req, res) => {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const announcement = await findAnnouncementForUser(id, req.user!);
+  if (!announcement) return res.status(404).json({ message: 'Announcement not found' });
+
+  await announcement.deleteOne();
+  emitAnnouncementChange('announcement:deleted', announcement);
+  return res.status(204).end();
 }));
 
 export default router;
