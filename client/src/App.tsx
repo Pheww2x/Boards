@@ -14,6 +14,7 @@ type User = {
   name: string;
   email: string;
   role: Role;
+  boardingHouseId?: string;
 };
 
 type Room = {
@@ -74,7 +75,7 @@ type DashboardState = {
   payments: Payment[];
   maintenanceRequests: MaintenanceRequest[];
   tenant?: Tenant | null;
-  boardingHouse?: { name: string; address: string; contact: string } | null;
+  boardingHouse?: { id: string; name: string; address: string; contact: string } | null;
   monthlyBalance?: number;
   currentMonthPaid?: number;
 };
@@ -111,8 +112,8 @@ export default function App() {
   const [dashboardError, setDashboardError] = useState('');
   const [adminScreen, setAdminScreen] = useState<AdminScreen>('dashboard');
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'online' | 'offline'>('connecting');
-  const [email, setEmail] = useState('owner@boardhouse.local');
-  const [password, setPassword] = useState('owner123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const [roomForm, setRoomForm] = useState({ roomNumber: '', floor: '', type: 'single', maxCapacity: '', monthlyRent: '' });
@@ -246,8 +247,13 @@ export default function App() {
 
   const createRoom = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!user) {
+      setError('Sign in before creating a room');
+      return;
+    }
     try {
       await api.post('/rooms', {
+        boardingHouseId: dashboard?.boardingHouse?.id ?? user.boardingHouseId,
         roomNumber: roomForm.roomNumber,
         floor: Number(roomForm.floor),
         type: roomForm.type,
@@ -405,13 +411,6 @@ export default function App() {
               </button>
             </form>
 
-            <div className="boards-demo-accounts">
-              <p className="font-medium">Demo accounts</p>
-              <p>Owner · owner@boardhouse.local / owner123</p>
-              <p>Staff · staff@boardhouse.local / staff123</p>
-              <p>Tenant · tenant@boardhouse.local / tenant123</p>
-              <p>Admin · admin@boardhouse.local / admin123</p>
-            </div>
           </section>
         </div>
       </div>

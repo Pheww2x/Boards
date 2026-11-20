@@ -54,13 +54,21 @@ router.post('/', requireAuth, requireRole('super_admin', 'owner'), asyncHandler(
     return res.status(403).json({ message: 'You can only create rooms in your assigned or owned boarding house' });
   }
 
-  if (!boardingHouse && req.user?.role === 'owner' && !requestedBoardingHouseId) {
-    const ownedHouses = await BoardingHouse.find({ owner: req.user.id }).limit(2).exec();
-    if (ownedHouses.length === 1) {
-      boardingHouse = ownedHouses[0];
-      boardingHouseId = boardingHouse.id;
-    } else if (ownedHouses.length > 1) {
-      return res.status(400).json({ message: 'Select one of your boarding houses before creating a room' });
+  if (!boardingHouse && req.user?.role === 'owner') {
+    const assignedId = req.user.boardingHouseId;
+    if (assignedId && assignedId !== boardingHouseId) {
+      boardingHouse = await BoardingHouse.findOne({ id: assignedId }).exec();
+      if (boardingHouse) boardingHouseId = boardingHouse.id;
+    }
+
+    if (!boardingHouse) {
+      const ownedHouses = await BoardingHouse.find({ owner: req.user.id }).limit(2).exec();
+      if (ownedHouses.length === 1) {
+        boardingHouse = ownedHouses[0];
+        boardingHouseId = boardingHouse.id;
+      } else if (ownedHouses.length > 1) {
+        return res.status(400).json({ message: 'Select one of your boarding houses before creating a room' });
+      }
     }
   }
 

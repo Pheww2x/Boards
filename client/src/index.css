@@ -164,20 +164,6 @@ button, input, textarea, select {
   color: var(--boards-primary);
 }
 
-.boards-demo-accounts {
-  margin-top: 28px;
-  padding-top: 18px;
-  border-top: 1px solid var(--boards-border);
-  color: var(--boards-muted);
-  font-size: 12px;
-  line-height: 1.8;
-}
-
-.boards-demo-accounts p:first-child {
-  margin-bottom: 5px;
-  color: var(--boards-text);
-}
-
 .boards-app {
   background: var(--boards-page) !important;
   color: var(--boards-text) !important;
