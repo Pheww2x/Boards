@@ -661,7 +661,7 @@ export default function App() {
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
                   <h2 className="mb-3 text-lg font-semibold">Announcements</h2>
                   {(user.role === 'owner' || user.role === 'super_admin') && (
-                    <form onSubmit={publishAnnouncement} className="mb-4 space-y-2">
+                    <form onSubmit={publishAnnouncement} className="boards-announcement-composer">
                       <label className="sr-only" htmlFor="announcement-message">Announcement message</label>
                       <textarea
                         id="announcement-message"
@@ -669,47 +669,47 @@ export default function App() {
                         value={announcementMessage}
                         onChange={(event) => setAnnouncementMessage(event.target.value)}
                         placeholder="Write an announcement for your boarding house"
-                        className="min-h-[90px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+                        className="boards-announcement-input"
                       />
-                      <button type="submit" className="w-full rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-white">
+                      <button type="submit" className="boards-announcement-publish">
                         Publish announcement
                       </button>
                     </form>
                   )}
                   <div className="space-y-3">
                     {dashboard.announcements.length > 0 ? dashboard.announcements.map((item) => (
-                      <div key={item.id} className="rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-200">
+                      <div key={item.id} className="boards-announcement-item">
                         {editingAnnouncementId === item.id ? (
-                          <form onSubmit={saveAnnouncementEdit} className="space-y-2">
+                          <form onSubmit={saveAnnouncementEdit} className="boards-announcement-edit-form">
                             <label className="sr-only" htmlFor={`edit-announcement-${item.id}`}>Edit announcement</label>
                             <textarea
                               id={`edit-announcement-${item.id}`}
                               required
                               value={editingAnnouncementMessage}
                               onChange={(event) => setEditingAnnouncementMessage(event.target.value)}
-                              className="min-h-[90px] w-full rounded-lg border border-slate-700 bg-white px-3 py-2 text-sm text-slate-800"
+                              className="boards-announcement-input"
                             />
-                            <div className="flex justify-end gap-3">
-                              <button type="button" onClick={() => setEditingAnnouncementId(null)} className="text-xs font-medium text-slate-500 hover:text-slate-800">Cancel</button>
-                              <button type="submit" className="text-xs font-semibold text-cyan-700 hover:text-cyan-900">Save changes</button>
+                            <div className="boards-announcement-actions">
+                              <button type="button" onClick={() => setEditingAnnouncementId(null)} className="boards-announcement-action boards-announcement-cancel">Cancel</button>
+                              <button type="submit" className="boards-announcement-action boards-announcement-save">Save changes</button>
                             </div>
                           </form>
                         ) : (
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="min-w-0 flex-1 whitespace-pre-wrap">{item.message}</p>
+                          <div className="boards-announcement-content">
+                            <p className="boards-announcement-message">{item.message}</p>
                             {user.role === 'owner' && item.boardingHouseId && (
-                              <div className="flex shrink-0 gap-3">
+                              <div className="boards-announcement-actions">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setEditingAnnouncementId(item.id);
                                     setEditingAnnouncementMessage(item.message);
                                   }}
-                                  className="text-xs font-medium text-cyan-700 hover:text-cyan-900"
+                                  className="boards-announcement-action boards-announcement-edit"
                                 >
                                   Edit
                                 </button>
-                                <button type="button" onClick={() => deleteAnnouncement(item.id)} className="text-xs font-medium text-red-600 hover:text-red-800">
+                                <button type="button" onClick={() => deleteAnnouncement(item.id)} className="boards-announcement-action boards-announcement-delete">
                                   Delete
                                 </button>
                               </div>
